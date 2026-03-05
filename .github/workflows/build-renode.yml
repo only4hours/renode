@@ -3,11 +3,13 @@ name: build-renode
 on:
   workflow_dispatch:
   push:
-    branches: [ "main" ]
+    branches: ["main"]
+  pull_request:
 
 jobs:
   build:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -15,18 +17,25 @@ jobs:
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
+          python-version: "3.11"
+
+      # (선택) 스크립트 실행권한 문제 방지용
+      - name: Ensure build scripts are executable
+        run: |
+          chmod +x build.sh || true
 
       - name: Build (dotnet)
         run: |
           ./build.sh --net
 
-      - name: Package
+      # ✅ 여기서 -p 대신 -t 사용 (portable tar.gz 생성)
+      - name: Package (portable)
         run: |
-          ./build.sh -p --net
+          ./build.sh -t --net
 
-      - name: Upload artifact
+      - name: Upload artifact (portable package)
         uses: actions/upload-artifact@v4
         with:
-          name: renode-package
-          path: output/packages/**
+          name: renode-portable
+          path: output/packages/*.tar.gz
+          if-no-files-found: error
